@@ -1,0 +1,128 @@
+<!DOCTYPE HTML>  
+<html ng-app="myApp">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Bootstrap 101 Template</title>
+
+        <!-- Bootstrap -->
+        <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style type="text/css">
+            .bs-example{
+                margin: 20px;
+            }
+            /* Fix alignment issue of label on extra small devices in Bootstrap 3.2 */
+            .form-horizontal .control-label{
+                padding-top: 7px;
+            }
+        </style>
+
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+          <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+          <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div class="bs-example" ng-controller="NgServerValidationTestCtrl">
+            <form name="form" class="form-horizontal" novalidate>
+                <div class="form-group" ng-class="{ 'has-error' : form.nome.$dirty && form.nome.$invalid }">
+                    <label for="nome" class="control-label col-xs-2">Nome:</label>
+                    <div class="col-xs-10">
+                        <input type="text" name="nome" class="form-control" id="nome" placeholder="Informe o nome" ng-model="model.nome" server-error required>
+                        <p ng-show="form.nome.$error.required && form.nome.$dirty" class="help-block">Campo de preenchimento obrigatório</p>
+                        <p ng-show="form.nome.$dirty && form.nome.$invalid" class="help-block" ng-repeat="error in errorMessage('nome')" ng-bind="error">Texto com os erros</p>
+                    </div>
+                </div>
+                <div class="form-group" ng-class="{ 'has-error' : form.endereco.$invalid }">
+                    <label for="endereco" class="control-label col-xs-2">Endereco:</label>
+                    <div class="col-xs-10">
+                        <input type="text" name="endereco" class="form-control" id="endereco" placeholder="Informe o endereco" ng-model="model.endereco" server-error>
+                        <p ng-show="form.endereco.$invalid" class="help-block" ng-repeat="error in errorMessage('endereco')" ng-bind="error">Texto com os erros</p>
+                    </div>
+                </div>
+                <div class="form-group" ng-class="{ 'has-error' : form.numero.$invalid }">
+                    <label for="numero" class="control-label col-xs-2">Número:</label>
+                    <div class="col-xs-10">
+                        <input type="text" name="numero" class="form-control" id="numero" placeholder="Informe o numero" ng-model="model.numero" server-error>
+                        <p ng-show="form.numero.$invalid" class="help-block" ng-repeat="error in errorMessage('numero')" ng-bind="error">Texto com os erros</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-xs-offset-2 col-xs-10">
+                        <button type="button" class="btn btn-primary" ng-click="cadastrar()">Confirmar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </body>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script type="text/javascript" src="bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="bower_components/angular-bootstrap/ui-bootstrap.js"></script>
+    <script type="text/javascript" src="bower_components/underscore/underscore.js"></script>
+    <script type="text/javascript">
+        var myApp = angular.module('myApp', []);
+
+        function AbstractCtrl($scope, nomeForm) {
+            var _this = this;
+            $scope.nomeForm = nomeForm;
+
+            $scope.errors = [];
+
+            $scope.failure = function(response) {
+                $scope.errors = response.errors;
+                _.each(response.errors, function(errors, key) {
+                    $scope.rejectField(key)
+                });
+            };
+
+            $scope.rejectField = function(field) {
+                $scope[$scope.nomeForm][field].$setValidity('server', false);
+            };
+
+            $scope.errorMessage = function(field) {
+                var result = [];
+                _.each($scope.errors, function(error, key) {
+                    if(key === field) {
+                        result.push(error);
+                    }
+                });
+
+                return _.flatten(result);
+            };
+        };
+
+        function NgServerValidationTestCtrl($scope, $http) {
+            var _this = this;
+
+            angular.extend(this, new AbstractCtrl($scope, 'form'));
+
+            $scope.cadastrar = function() {
+                $http.post('http://private-4e074-cezbatistao.apiary-mock.com/artigos/clientandservervalidate/cadastrar').success(function (result) {
+                    alert('cadastrar!');
+                }).error($scope.failure);
+            };
+        };
+
+        myApp.controller('AbstractCtrl', ['$scope', AbstractCtrl]);
+        myApp.controller('NgServerValidationTestCtrl', ['$scope', '$http', NgServerValidationTestCtrl]);
+
+        myApp.directive('serverError', function() {
+            return {
+                restrict: 'A',
+                require: 'ngModel',
+                link: function ($scope, element, attrs, ctrl) {
+                    $scope.$watch(attrs.ngModel, function(value) {
+                        ctrl.$setValidity('server', true);
+
+                        delete $scope.errors[attrs.name];
+                    });
+                }
+            };
+        });
+
+    </script>
+</html>
